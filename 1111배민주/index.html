@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#176b52">
+  <title>스터디아자스 · 매일 5분</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <header><a href="index.html" aria-label="스터디아자스 홈">스터디<span>아자스</span></a><span id="streak" class="badge"></span></header>
+    <main id="screen"></main>
+    <footer>교재가 없어도 매일 5분 아자스!<br>가벼운 문제와 쉬운 말로 함께 공부해요.</footer>
+  </div>
+  <dialog id="complete" aria-labelledby="complete-title">
+    <div class="celebrate" aria-hidden="true">🔥</div>
+    <h2 id="complete-title">오늘도 아자스!</h2>
+    <p id="complete-message"></p>
+    <button id="complete-home" class="primary">홈으로 돌아가기</button>
+  </dialog>
+</body>
+</html>
