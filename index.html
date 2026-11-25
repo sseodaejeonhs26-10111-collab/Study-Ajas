@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스터디아자스 · 하루 5분</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eff6f3; color: #183e34; font: 18px/1.6 system-ui, sans-serif; }
+  main { max-width: 600px; margin: 45px auto; padding: 26px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  header strong { font-size: 21px; }
+  #streak { background: #fff; padding: 6px 14px; border-radius: 25px; white-space: nowrap; }
+  h1 { font-size: 36px; line-height: 1.3; margin: 40px 0 12px; letter-spacing: -1.5px; }
+  h2 { font-size: 25px; line-height: 1.5; }
+  p { margin: 12px 0 22px; }
+  .muted { color: #526b62; }
+  .card { background: white; padding: 25px; border-radius: 22px; margin-top: 24px; border: 1px solid #dbe6e0; }
+  button { font: inherit; cursor: pointer; border: 1px solid #c5d9cd; border-radius: 14px; padding: 17px 20px; background: white; color: inherit; width: 100%; margin-top: 12px; text-align: left; }
+  button:hover { background: #e9f5ed; border-color: #287550; }
+  button:focus-visible { outline: 3px solid #d48b17; outline-offset: 3px; }
+  button:disabled { cursor: default; }
+  .primary { background: #226346; color: white; text-align: center; border-color: #226346; }
+  .primary:hover { background: #184b34; color: white; }
+  .subject { font-size: 22px; font-weight: 700; padding: 25px; }
+  .subject small { display: block; font-size: 16px; font-weight: 400; margin: 4px 0 0 36px; }
+  .bubble { background: #dfefdf; border-radius: 16px; padding: 20px; margin-top: 26px; }
+  .bubble p { margin: 6px 0 0; }
+  .back { width: auto; border: 0; background: none; padding: 4px 0; font-size: 16px; }
+  progress { width: 100%; height: 12px; accent-color: #287550; }
+  .wrong { background: #fff1df; border-color: #bb743a; }
+  .correct { background: #dfefdf; border-color: #287550; }
+  footer { font-size: 14px; color: #526b62; text-align: center; margin-top: 30px; }
+  [hidden] { display: none !important; }
+  @media(max-width: 480px) { main { margin: 12px auto; padding: 20px; } h1 { font-size: 31px; } .card { padding: 20px; } }
+</style>
+<main>
+  <header><strong>🌱 스터디아자스</strong><span id="streak"></span></header>
+  <section id="home">
+    <h1>조금씩 배우면,<br>어느새 할 수 있어요.</h1>
+    <p class="muted">교재가 없어도 괜찮아. 오늘도 딱 5분 아자스!</p>
+    <button class="subject" data-subject="math">🔢 기초 수학<small>숫자와 친해지는 작은 한 걸음</small></button>
+    <button class="subject" data-subject="korean">📖 국어 문해력<small>짧은 글을 읽고 뜻을 알아봐요</small></button>
+    <div class="bubble"><strong>🤖 아자 선생님</strong><p id="greeting"></p></div>
+  </section>
+  <section id="study" hidden>
+    <button class="back" id="homeButton">홈으로</button>
+    <p id="stage" class="muted"></p>
+    <progress id="progress" value="0" max="5"></progress>
+    <div class="card"><h2 id="question"></h2><div id="answers"></div></div>
+    <div class="bubble" aria-live="polite"><strong>🤖 아자 선생님</strong><p id="feedback"></p></div>
+    <button id="next" class="primary" hidden>다음 문제</button>
+  </section>
+  <section id="done" class="card" hidden aria-live="polite">
+    <h1>🔥 오늘도 아자스!</h1><p id="result"></p>
+    <button id="finish" class="primary">홈으로 돌아가기</button>
+  </section>
+  <footer>하루 5분 · 큰 배움의 시작<br>힌트는 미리 저장되어 바로 보여요.</footer>
+</main>
+<script>
+// 문제: [질문, 보기 4개, 정답 번호(0부터), 쉬운 말 힌트]
+const questions = {
+  math: {
+    test: [
+      ['3 + 2는 얼마일까요?', ['4', '5', '6', '7'], 1, ''],
+      ['10 - 4는 얼마일까요?', ['4', '5', '6', '7'], 2, '']
+    ],
+    basic: [
+      ['사과 2개에 1개를 더 받았어요. 모두 몇 개일까요?', ['1개', '2개', '3개', '4개'], 2, '사과 2개를 떠올려요. 거기에 하나를 더 세어 봐요.'],
+      ['연필 5자루 중 2자루를 줬어요. 몇 자루 남았을까요?', ['2자루', '3자루', '4자루', '5자루'], 1, '다섯 손가락을 펴고 두 손가락을 접어 봐요.'],
+      ['4 + 3은 얼마일까요?', ['5', '6', '7', '8'], 2, '4 다음부터 숫자를 세 번 더 세어 봐요.'],
+      ['귤 6개를 두 사람이 똑같이 나누면 한 사람은 몇 개를 받을까요?', ['2개', '3개', '4개', '6개'], 1, '두 사람에게 귤을 하나씩 번갈아 주어 봐요.'],
+      ['2개씩 담긴 과자 봉지가 3개예요. 과자는 모두 몇 개일까요?', ['3개', '4개', '5개', '6개'], 3, '2개, 또 2개, 또 2개를 모아 봐요.']
+    ],
+    normal: [
+      ['사과 12개 중 5개를 먹었어요. 몇 개 남았을까요?', ['5개', '6개', '7개', '8개'], 2, '12에서 먼저 2를 빼고, 남은 3을 더 빼 봐요.'],
+      ['한 줄에 4명씩 3줄로 섰어요. 모두 몇 명일까요?', ['7명', '10명', '12명', '16명'], 2, '4명을 세 번 모아요. 4 + 4 + 4를 계산해 봐요.'],
+      ['사탕 15개를 3명이 똑같이 나눠요. 한 명은 몇 개를 받을까요?', ['3개', '4개', '5개', '6개'], 2, '3명에게 하나씩 주면 한 번에 3개가 줄어요. 몇 번 나눌 수 있을까요?'],
+      ['500원짜리 공책과 300원짜리 연필을 사요. 모두 얼마일까요?', ['200원', '600원', '700원', '800원'], 3, '100원이 다섯 개, 또 세 개 있어요. 함께 세어 봐요.'],
+      ['피자 한 판을 4조각으로 똑같이 나눴어요. 한 조각은 전체의 얼마일까요?', ['1/2', '1/3', '1/4', '1/5'], 2, '아래 숫자는 전체 조각 수, 위 숫자는 고른 조각 수예요.']
+    ]
+  },
+  korean: {
+    test: [
+      ['민수는 비가 와서 우산을 썼어요. 우산을 쓴 까닭은 무엇일까요?', ['더워서', '비가 와서', '배가 고파서', '졸려서'], 1, ''],
+      ['“도서관에서는 조용히 해요.” 어떻게 해야 할까요?', ['크게 노래해요', '뛰어다녀요', '작은 소리로 말해요', '소리를 질러요'], 2, '']
+    ],
+    basic: [
+      ['지우는 아침에 빵을 먹었어요. 지우가 먹은 것은 무엇일까요?', ['밥', '빵', '사과', '우유'], 1, '문장에서 “먹었어요” 바로 앞에 있는 말을 찾아봐요.'],
+      ['“문을 살며시 닫아요.” 문을 어떻게 닫을까요?', ['세게', '빠르게', '조용하고 가볍게', '활짝'], 2, '자는 아기가 깨지 않게 문을 닫는 모습을 생각해 봐요.'],
+      ['수아는 목이 말라 물을 마셨어요. 물을 마신 까닭은 무엇일까요?', ['목이 말라서', '추워서', '졸려서', '심심해서'], 0, '무엇 때문에 물을 찾았는지 문장을 다시 읽어 봐요.'],
+      ['“차가운”과 반대되는 말은 무엇일까요?', ['시원한', '작은', '따뜻한', '빠른'], 2, '얼음물과 따뜻한 차를 만졌을 때 느낌을 떠올려 봐요.'],
+      ['먼저 손을 씻고, 그다음 밥을 먹었어요. 먼저 한 일은 무엇일까요?', ['밥 먹기', '손 씻기', '잠자기', '책 읽기'], 1, '“먼저”라는 말 바로 뒤를 살펴봐요.']
+    ],
+    normal: [
+      ['하늘이 어두워지고 천둥이 쳤어요. 곧 어떤 일이 생길까요?', ['꽃이 피어요', '눈이 녹아요', '비가 와요', '해가 떠요'], 2, '어두운 구름과 천둥은 어떤 날씨에 자주 나타날까요?'],
+      ['영수는 친구가 떨어뜨린 책을 주워 주었어요. 영수의 행동을 나타내는 말은?', ['친절해요', '게을러요', '화가 나요', '겁이 많아요'], 0, '친구를 도와주는 사람에게 어떤 말을 해 주고 싶나요?'],
+      ['물은 소중해요. 양치할 때 컵을 쓰면 물을 아낄 수 있어요. 이 글이 권하는 행동은?', ['물을 계속 틀어요', '양치를 안 해요', '컵으로 물을 받아 써요', '물을 버려요'], 2, '물을 적게 쓰는 방법이 글에 나와 있어요.'],
+      ['“약속 시간을 지키려고 발걸음을 재촉했어요.” 어떤 모습일까요?', ['천천히 걸어요', '빠르게 걸어요', '앉아 쉬어요', '잠을 자요'], 1, '약속에 늦지 않으려면 어떻게 걸어야 할까요?'],
+      ['씨앗을 심고 물을 주었어요. 며칠 뒤 싹이 났어요. 가장 나중에 일어난 일은?', ['씨앗을 사요', '씨앗을 심어요', '물을 줘요', '싹이 나요'], 3, '“며칠 뒤”라는 말 다음에 일어난 일을 찾아봐요.']
+    ]
+  }
+};
+const $ = id => document.getElementById(id);
+// UTC 대신 기기의 날짜를 사용해 자정 기준으로 출석을 계산해요.
+function dateKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+let record = { date: '', count: 0 }, storageAvailable = true;
+try {
+  const saved = JSON.parse(localStorage.getItem('study-ajas') || 'null');
+  if (saved && typeof saved.date === 'string' && Number.isInteger(saved.count) && saved.count > 0) record = saved;
+} catch { storageAvailable = false; }
+function streakState() {
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const active = record.date === dateKey() || record.date === dateKey(yesterday);
+  return { count: active ? record.count : 0, broken: !!record.date && !active };
+}
+let subject, mode, level, index, score, list, answered;
+function show(screen) {
+  ['home','study','done'].forEach(id => $(id).hidden = id !== screen);
+}
+function home() {
+  const state = streakState();
+  $('streak').textContent = `🔥 ${state.count}일째`;
+  $('greeting').textContent = state.broken ? '괜찮아, 쉬운 문제 하나로 다시 시작하자! 오늘은 한 문제 미션이야.' : '안녕! 좋아하는 과목을 고르면 함께 시작할 수 있어.';
+  show('home');
+}
+document.querySelectorAll('[data-subject]').forEach(button => button.onclick = () => {
+  subject = button.dataset.subject; mode = 'test'; index = 0; score = 0;
+  list = questions[subject].test; show('study'); render();
+});
+function render(message) {
+  answered = false;
+  const q = list[index];
+  $('stage').textContent = `${subject === 'math' ? '기초 수학' : '국어 문해력'} · ${mode === 'test' ? '레벨 체크' : level === 'basic' ? '기초 탄탄' : '차근차근 실력'} ${index+1}/${list.length}`;
+  $('progress').max = list.length; $('progress').value = index;
+  $('question').textContent = q[0]; $('answers').replaceChildren(); $('next').hidden = true;
+  $('feedback').textContent = message || (mode === 'test' ? '지금 아는 만큼 골라 봐. 틀려도 괜찮아!' : '천천히 읽고 골라 봐. 틀리면 힌트를 줄게!');
+  q[1].forEach((text, i) => {
+    const button = document.createElement('button'); button.textContent = text;
+    button.onclick = () => {
+      if (answered) return;
+      if (mode !== 'test' && i !== q[2]) {
+        button.classList.add('wrong'); button.disabled = true;
+        $('feedback').textContent = '다시 해 볼까? ' + q[3]; return;
+      }
+      answered = true;
+      if (i === q[2]) score++;
+      if (mode !== 'test') button.classList.add('correct');
+      document.querySelectorAll('#answers button').forEach(b => b.disabled = true);
+      $('progress').value = index+1;
+      $('feedback').textContent = mode === 'test' ? '답을 기록했어. 잘하고 있어!' : '맞았어! 한 걸음 더 자랐네. 아자스!';
+      $('next').textContent = index === list.length-1 ? (mode === 'test' ? '내 수준으로 시작하기' : '오늘 공부 완료') : '다음 문제';
+      $('next').hidden = false; $('next').focus();
+    };
+    $('answers').append(button);
+  });
+}
+$('next').onclick = () => {
+  if (!answered) return;
+  index++;
+  if (index < list.length) return render();
+  if (mode === 'test') {
+    level = score === 2 ? 'normal' : 'basic'; mode = 'quiz'; index = 0;
+    if (streakState().broken) level = 'basic';
+    list = questions[subject][level];
+    if (streakState().broken) list = list.slice(0,1);
+    return render(`${level === 'basic' ? '기초 탄탄' : '차근차근 실력'} 단계부터 시작할게! 아자스!`);
+  }
+  const today = dateKey(), already = record.date === today;
+  if (!already) {
+    record = { date: today, count: streakState().count + 1 };
+    try { localStorage.setItem('study-ajas', JSON.stringify(record)); } catch { storageAvailable = false; }
+  }
+  $('streak').textContent = `🔥 ${record.count}일째`;
+  $('result').textContent = (already ? '오늘 출석은 이미 기록했어. 한 번 더 공부했구나!' : `연속 출석 +1일! ${record.count}일째 함께 공부했어.`) + (storageAvailable ? ' 내일도 딱 5분, 함께하자!' : ' 이 브라우저에서는 기록을 저장할 수 없어.');
+  show('done');
+};
+$('homeButton').onclick = home; $('finish').onclick = home;
+home();
+</script>
+</html>
